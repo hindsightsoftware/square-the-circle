@@ -2,11 +2,12 @@ const assert = require('assert');
 const getStats = require('../src/getStats');
 
 describe('getStats', () => {
+  const deploymentFilter = {'jobName': 'deploy'};
   describe('whene there is no data', () => {
     it('should return correct stats', done => {
       const builds = [];
       const fetchBatch = (offset, batchSize) => new Promise(resolve => resolve({ builds }))
-      getStats(fetchBatch, new Date('2017-03-01'))
+      getStats(fetchBatch, deploymentFilter, new Date('2017-03-01'))
         .then(stats => assert.equal(stats.failedBuildsPercentage, 0))
         .then(done)
         .catch(done);
@@ -19,7 +20,7 @@ describe('getStats', () => {
           'start_time': '2017-03-02T10:18:33.094Z',
           'status': 'success',
           'build_time_millis': 10,
-          'build_parameters': { 'PRODUCTION': 'true' },
+          'build_parameters': { 'CIRCLE_JOB': 'deploy' },
         },
         {
           'start_time': '2017-03-02T10:18:33.094Z',
@@ -30,11 +31,11 @@ describe('getStats', () => {
           'start_time': '2017-02-02T10:18:33.094Z',
           'status': 'success',
           'build_time_millis': 30,
-          'build_parameters': { 'PRODUCTION': 'true' },
+          'build_parameters': { 'CIRCLE_JOB': 'deploy' },
         },
       ];
       const fetchBatch = offset => new Promise(resolve => resolve({ builds }))
-      getStats(fetchBatch, new Date('2017-03-01'))
+      getStats(fetchBatch, deploymentFilter, new Date('2017-03-01'))
         .then(stats => {
           assert.equal(stats.failedBuildsPercentage, 50);
           assert.equal(stats.codeDeploymentCount, 1);
@@ -75,19 +76,19 @@ describe('getStats', () => {
               'start_time': '2017-03-02T10:18:33.094Z',
               'status': 'fixed',
               'build_time_millis': 10,
-              'build_parameters': { 'PRODUCTION': 'true' },
+              'build_parameters': { 'CIRCLE_JOB': 'deploy' },
             },
             {
               'start_time': '2017-03-02T10:18:33.094Z',
               'status': 'failed',
               'build_time_millis': 15,
-              'build_parameters': { 'PRODUCTION': 'true' },
+              'build_parameters': { 'CIRCLE_JOB': 'deploy' },
             },
             {
               'start_time': '2017-03-02T10:18:33.094Z',
               'status': 'canceled',
               'build_time_millis': 10,
-              'build_parameters': { 'PRODUCTION': 'true' },
+              'build_parameters': { 'CIRCLE_JOB': 'deploy' },
             },
             {
               'start_time': '2017-03-02T10:18:33.094Z',
@@ -98,11 +99,11 @@ describe('getStats', () => {
               'start_time': '2017-02-02T10:18:33.094Z',
               'status': 'success',
               'build_time_millis': 30,
-              'build_parameters': { 'PRODUCTION': 'true' },
+              'build_parameters': { 'CIRCLE_JOB': 'deploy' },
             },
           ];
           const fetchBatch = offset => new Promise(resolve => resolve({ builds: builds.slice(offset, offset + batchSize), nextLimit: offset + batchSize }));
-          getStats(fetchBatch, new Date('2017-03-01'))
+          getStats(fetchBatch, deploymentFilter, new Date('2017-03-01'))
             .then(stats => {
               assert.equal(stats.failedBuildsPercentage, 25);
               assert.equal(stats.codeDeploymentCount, 1);
@@ -151,11 +152,11 @@ describe('getStats', () => {
             'start_time': '2017-02-02T10:18:33.094Z',
             'status': 'failed',
             'build_time_millis': 40,
-            'build_parameters': { 'PRODUCTION': 'true' },
+            'build_parameters': { 'CIRCLE_JOB': 'deploy' },
           },
         ];
         const fetchBatch = offset => new Promise(resolve => resolve({ builds: builds.slice(offset, offset + batchSize), nextLimit: offset + batchSize }));
-        getStats(fetchBatch, new Date('2017-03-01'))
+        getStats(fetchBatch, deploymentFilter, new Date('2017-03-01'))
           .then(stats => {
             assert.equal(stats.failedBuildsPercentage, 0);
             assert.equal(stats.codeDeploymentCount, 0);
@@ -173,23 +174,23 @@ describe('getStats', () => {
             'start_time': '2017-03-02T10:18:33.094Z',
             'status': 'failed',
             'build_time_millis': 10,
-            'build_parameters': { 'PRODUCTION': 'true' },
+            'build_parameters': { 'CIRCLE_JOB': 'deploy' },
           },
           {
             'start_time': '2017-03-02T10:18:33.094Z',
             'status': 'failed',
             'build_time_millis': 20,
-            'build_parameters': { 'PRODUCTION': 'true' },
+            'build_parameters': { 'CIRCLE_JOB': 'deploy' },
           },
           {
             'start_time': '2017-02-02T10:18:33.094Z',
             'status': 'failed',
             'build_time_millis': 30,
-            'build_parameters': { 'PRODUCTION': 'true' },
+            'build_parameters': { 'CIRCLE_JOB': 'deploy' },
           },
         ];
         const fetchBatch = offset => new Promise(resolve => resolve({ builds: builds.slice(offset, batchSize), nextLimit: batchSize }));
-        getStats(fetchBatch, new Date('2017-03-01'))
+        getStats(fetchBatch, deploymentFilter, new Date('2017-03-01'))
           .then(stats => {
             assert.equal(stats.failedBuildsPercentage, 100);
             assert.equal(stats.codeDeploymentCount, 0);
@@ -199,5 +200,47 @@ describe('getStats', () => {
           .catch(done);
       });
     });
+  });
+  describe('and there is data for different jobs', () => {
+    describe('and a deploy job is defined', () => {
+      it('should return correct stats', done => {
+        const batchSize = 4;
+        const builds = [
+          {
+            'start_time': '2017-03-02T10:18:33.094Z',
+            'status': 'success',
+            'build_time_millis': 10,
+            'build_parameters': { 'CIRCLE_JOB': 'deploy' },
+          },
+          {
+            'start_time': '2017-03-02T10:18:33.094Z',
+            'status': 'success',
+            'build_time_millis': 20,
+            'build_parameters': { 'CIRCLE_JOB': 'unit' },
+          },
+          {
+            'start_time': '2017-02-02T10:18:33.094Z',
+            'status': 'success',
+            'build_time_millis': 30,
+            'build_parameters': { 'CIRCLE_JOB': 'deploy' },
+          },
+          {
+            'start_time': '2017-02-02T10:18:33.094Z',
+            'status': 'success',
+            'build_time_millis': 30,
+            'build_parameters': { 'CIRCLE_JOB': 'unit' },
+          }
+        ];
+        const fetchBatch = offset => new Promise(resolve => resolve({ builds: builds.slice(offset, batchSize), nextLimit: batchSize }));
+        getStats(fetchBatch, deploymentFilter, new Date('2017-02-01'))
+          .then(stats => {
+            assert.equal(stats.failedBuildsPercentage, 0);
+            assert.equal(stats.codeDeploymentCount, 2);
+            assert.equal(stats.averageBuildTime, 22.5);
+          })
+          .then(done)
+          .catch(done);
+      });
+    });    
   });
 });

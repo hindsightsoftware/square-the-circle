@@ -32,8 +32,8 @@ const getAverageBuildTime = builds => (
   totalBuildTime(builds) / (builds.length || 1)
 );
 
-const getCodeDeploymentCount = builds => (
-  builds.filter(isSuccessfulDeployment).length
+const getCodeDeploymentCount = (builds, deploymentFilter) => (
+  builds.filter((build) => isSuccessfulDeployment(build, deploymentFilter)).length
 );
 
 const failedBuilds = builds => (
@@ -44,18 +44,20 @@ const totalBuildTime = builds => (
   builds.reduce((totalTime, build) => totalTime += build.build_time_millis , 0)
 );
 
-const isSuccessfulDeployment = build => (
+const isSuccessfulDeployment = (build, deploymentFilter) => (
+  deploymentFilter.jobName &&
   build.build_parameters &&
-  build.build_parameters.PRODUCTION &&
+  build.build_parameters.CIRCLE_JOB &&
+  new RegExp(deploymentFilter.jobName).test(build.build_parameters.CIRCLE_JOB) &&
   build.status !== 'failed' && build.status !== 'canceled'
 );
 
-module.exports = (fetchBatch, fromDate) => (
+module.exports = (fetchBatch, deploymentFilter, fromDate) => (
   fetchBuilds(0, fetchBatch, fromDate)
   .then(builds => recentBuilds(builds, fromDate))
   .then(builds => ({
     failedBuildsPercentage: getFailedBuildsPercentage(builds),
-    codeDeploymentCount: getCodeDeploymentCount(builds),
+    codeDeploymentCount: getCodeDeploymentCount(builds, deploymentFilter),
     averageBuildTime: getAverageBuildTime(builds),
   }))
 );

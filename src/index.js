@@ -47,8 +47,10 @@ const sendToSlack = weekAgo => stats => {
   request(options);
 }
 
+const deploymentFilter = {'jobName': 'deploy'};
+
 module.exports.handler = (event, context) => {
   const fromDate = new Date(new Date().setDate(new Date().getDate() - config.timeSpan));
-  getStats(circleCIFetchBatch, fromDate)
+  getStats(circleCIFetchBatch, deploymentFilter, fromDate)
     .then(sendToSlack(fromDate));
 }
