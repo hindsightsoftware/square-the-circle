@@ -201,14 +201,16 @@ describe('getStats', () => {
       });
     });
   });
-  describe('and there is data for different jobs', () => {
+  describe('and there is data for different CircleCI jobs', () => {
     describe('and a deploy job is defined', () => {
       it('should return correct stats', done => {
         const batchSize = 4;
         const builds = [
           {
+            'committer_date': '2017-03-02T10:18:30.000Z',
             'start_time': '2017-03-02T10:18:33.094Z',
             'status': 'success',
+            'stop_date': '2017-03-02T10:18:33.010Z',
             'build_time_millis': 10,
             'build_parameters': { 'CIRCLE_JOB': 'deploy' },
           },
@@ -219,8 +221,10 @@ describe('getStats', () => {
             'build_parameters': { 'CIRCLE_JOB': 'unit' },
           },
           {
+            'committer_date': '2017-02-02T10:18:30.000Z',
             'start_time': '2017-02-02T10:18:33.094Z',
             'status': 'success',
+            'stop_date': '2017-02-02T10:18:33.010Z',
             'build_time_millis': 30,
             'build_parameters': { 'CIRCLE_JOB': 'deploy' },
           },
@@ -237,6 +241,7 @@ describe('getStats', () => {
             assert.equal(stats.failedBuildsPercentage, 0);
             assert.equal(stats.codeDeploymentCount, 2);
             assert.equal(stats.averageBuildTime, 22.5);
+            assert.equal(stats.meanCommitToDeployTime, 3010);
           })
           .then(done)
           .catch(done);

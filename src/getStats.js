@@ -52,6 +52,18 @@ const isSuccessfulDeployment = (build, deploymentFilter) => (
   build.status !== 'failed' && build.status !== 'canceled'
 );
 
+const getMeanCommitToDeployTime = (builds, deploymentFilter) => (
+  calcMeanCommitToDeployTime(builds.filter((build) => isSuccessfulDeployment(build, deploymentFilter)))
+);
+
+const calcMeanCommitToDeployTime = deployments => (
+  deployments.reduce((totalTime, build) => totalTime += commitToDeployTime(build), 0) / deployments.length
+);
+
+const commitToDeployTime = build => (
+  Date.parse(build.stop_date) - Date.parse(build.committer_date)
+);
+
 module.exports = (fetchBatch, deploymentFilter, fromDate) => (
   fetchBuilds(0, fetchBatch, fromDate)
   .then(builds => recentBuilds(builds, fromDate))
@@ -59,5 +71,6 @@ module.exports = (fetchBatch, deploymentFilter, fromDate) => (
     failedBuildsPercentage: getFailedBuildsPercentage(builds),
     codeDeploymentCount: getCodeDeploymentCount(builds, deploymentFilter),
     averageBuildTime: getAverageBuildTime(builds),
+    meanCommitToDeployTime: getMeanCommitToDeployTime(builds, deploymentFilter),
   }))
 );

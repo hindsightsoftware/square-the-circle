@@ -31,11 +31,12 @@ const formatTime = millis => {
 
 const sendToSlack = weekAgo => stats => {
   const report = `
-*${config.projectName} CircleCI builds report*
+*CircleCI builds scorecard*
 *from* _${weekAgo.toLocaleDateString()}_ *to* _${new Date().toLocaleDateString()}_
 *Failed builds*: ${stats.failedBuildsPercentage.toFixed(2)}%
 *Code deployments*: ${stats.codeDeploymentCount}
 *Average build time*: ${formatTime(stats.averageBuildTime)}
+*Mean commit to deploy time*: ${formatTime(stats.meanCommitToDeployTime)}
 `
   const options = {
     method: 'POST',
