@@ -21,7 +21,14 @@ const shouldFetchMore = (builds, fromDate) => (
 );
 
 const recentBuilds = (builds, fromDate) => (
-  builds.filter(build => new Date(build.start_time) > fromDate)
+  builds.filter(build => !build.start_time || new Date(build.start_time) > fromDate)
+);
+
+const relevantBuilds = (builds, projectFilter) => (
+  builds.filter(build => 
+    new RegExp(projectFilter.reponame).test(build.reponame) &&
+    new RegExp(projectFilter.branch).test(build.branch)
+  )
 );
 
 const getFailedBuildsPercentage = builds => (
@@ -61,16 +68,18 @@ const calcMeanCommitToDeployTime = deployments => (
 );
 
 const commitToDeployTime = build => (
-  Date.parse(build.stop_date) - Date.parse(build.committer_date)
+  Date.parse(build.stop_time) - Date.parse(build.committer_date)
 );
 
-module.exports = (fetchBatch, deploymentFilter, fromDate) => (
+module.exports = (fetchBatch, projectFilter, deploymentFilter, fromDate) => (
   fetchBuilds(0, fetchBatch, fromDate)
   .then(builds => recentBuilds(builds, fromDate))
+  .then(builds => relevantBuilds(builds, projectFilter))
   .then(builds => ({
     failedBuildsPercentage: getFailedBuildsPercentage(builds),
     codeDeploymentCount: getCodeDeploymentCount(builds, deploymentFilter),
     averageBuildTime: getAverageBuildTime(builds),
     meanCommitToDeployTime: getMeanCommitToDeployTime(builds, deploymentFilter),
-  }))
+    }
+  ))
 );

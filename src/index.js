@@ -5,8 +5,8 @@ const config = require('./config');
 const getStats = require('./getStats');
 
 const circleCIFetchBatch = (offset) => {
-  const endpoint = `https://circleci.com/api/v1.1/project/github/${config.organisationName}/${config.projectName}`;
-  const batchSize = 30;
+  const endpoint = `https://circleci.com/api/v1.1/recent-builds`;
+  const batchSize = 100;
   const options = {
     method: 'GET',
     uri: endpoint,
@@ -26,7 +26,7 @@ const circleCIFetchBatch = (offset) => {
 
 const formatTime = millis => {
   const d = new Date(millis);
-  return `${d.getUTCMinutes()}:${('0' + d.getUTCSeconds()).slice(-2)}`
+  return `${('0' + d.getUTCHours()).slice(-2)}:${('0' + d.getUTCMinutes()).slice(-2)}:${('0' + d.getUTCSeconds()).slice(-2)}`
 }
 
 const sendToSlack = weekAgo => stats => {
@@ -45,13 +45,14 @@ const sendToSlack = weekAgo => stats => {
       'text': report
     }
   }
+
   request(options);
 }
 
-const deploymentFilter = {'jobName': 'deploy'};
+const deploymentFilter = {'jobName': config.deploymentJobName};
 
 module.exports.handler = (event, context) => {
   const fromDate = new Date(new Date().setDate(new Date().getDate() - config.timeSpan));
-  getStats(circleCIFetchBatch, deploymentFilter, fromDate)
+  getStats(circleCIFetchBatch, config.projects, deploymentFilter, fromDate)
     .then(sendToSlack(fromDate));
 }
