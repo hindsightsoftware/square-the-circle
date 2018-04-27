@@ -1,18 +1,28 @@
 # Square the circle
 
-This is a CircleCI builds statistics serverless lambda that runs on AWS. The report is sent out periodically to your chosen Slack channel.
+Regurlay report key Lean Software and DevOps metrics from CircleCI 2.0 to Slack.
 
-At the moment we derive from CircleCI API the following stats:
+In the book 'Accelerate: The Science of Lean Software and DevOps' key metrics were idenified for high performing companies and teams.
+This serverless AWS lambda caclautes some of these key metrics from the data in CircleCI and publishes them to a specified Slack 
+channel so they can be tracked.
+
+At the moment we derive from theCircleCI API the following stats:
 * Percentage of failed builds
 * Number of code deployments
 * Average Build time
+* Commit to deploy lead time
 
-### Number of code deployments
+## Forked from Red Badger
 
-To distinguish deployments from usual builds the script checks CircleCI `build_parameters` which can be set in your deployment script. `build_parameters` should containt `PRODUCTION` flag set to `true`.
-```
-build_parameters: { PRODUCTION: 'true' }
-```
+This is a fork from Red Badgers 'Square the circle' and kudos should go to them for the orignal lambda and idea. This fork was created because we want to 
+track the key metrics for software development teams working with microservices using CircleCI
+
+### Changes
+
+* Support for CircleCI 2.0 Workflows and Jobs
+* Introduced the `Commit to deploy lead time` metric
+* Enabled a group group of repositoes and builds to be tracked - esential if you are developing microservies
+
 
 ## Configuration
 
@@ -27,9 +37,13 @@ Edit `src/config.js` and set your config variables
 ```javascript
 config.circleCItoken = '123abc';
 config.slackEndpoint = 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX';
-config.organisationName = 'redbadger'; // Github account name
-config.projectName = 'website-honestly'; // Github repo name
 config.timeSpan = 7; // Report time span. 7 means weekly
+
+config.projects = {};
+config.projects.reponame = 'behave-pro-*'; // regular expression to match the git reposiotres you are interested in.
+config.projects.branch = 'master'; // The main project of the project to avoid branches distuacting the metrics
+
+config.deploymentJobName = 'deploy_*'; // regular expression to idenitfy jobs within the CircleCI that perform deployments
 ```
 
 CircleCI token can be obtained [here](https://circleci.com/account/api).
@@ -43,6 +57,14 @@ functions:
     handler: dist/index.handler
     events:
       - schedule: cron(0 9 ? * 2 *)
+```
+
+### Number of code deployments
+
+CircleCI 2.0 introduced workflows and jobs. To distinguish deployments from the usual builds you specificy a regular expressions in the `config.deploymentJobName` configuration property to identify the deployment jobs.
+
+```
+config.deploymentJobName = 'deploy_*';
 ```
 
 ## Setup

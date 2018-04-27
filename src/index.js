@@ -36,7 +36,7 @@ const sendToSlack = weekAgo => stats => {
 *Failed builds*: ${stats.failedBuildsPercentage.toFixed(2)}%
 *Code deployments*: ${stats.codeDeploymentCount}
 *Average build time*: ${formatTime(stats.averageBuildTime)}
-*Mean commit to deploy time*: ${formatTime(stats.meanCommitToDeployTime)}
+*Commit to Deploy lead time*: ${formatTime(stats.meanCommitToDeployTime)}
 `
   const options = {
     method: 'POST',
