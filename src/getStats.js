@@ -53,6 +53,7 @@ const totalBuildTime = builds => (
 
 const isSuccessfulDeployment = (build, deploymentFilter) => (
   deploymentFilter.jobName &&
+  build.committer_date &&
   build.build_parameters &&
   build.build_parameters.CIRCLE_JOB &&
   new RegExp(deploymentFilter.jobName).test(build.build_parameters.CIRCLE_JOB) &&
